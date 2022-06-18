@@ -11,6 +11,7 @@ class Enemy(pygame.sprite.Sprite):
         self._layer = 3
         self.kind = "enemy"
 
+        self.status = "idle"
         self.push_back = 2
         self.steal_oil = 10
         self.hitbox = None
@@ -44,17 +45,23 @@ class Enemy(pygame.sprite.Sprite):
         self.update_image()
 
         if ticks - self.stun_trigger > self.stun_timeout:
+            self.status = "idle"
             self.hitbox.x += self.direction.x * self.speed
             self.detect_collistions(collision_group, left_right= True)
             self.hitbox.y += self.direction.y * self.speed
             self.detect_collistions(collision_group, left_right=False)
+        else:
+            self.status = "stun"
 
         self.update_rect()
 
     def detect_collistions(self, collision_group, left_right = True):
         is_colliding = False
 
-        next_tile_empty = True
+        empty_left = True
+        empty_right = True
+
+
 
         for sprite in collision_group.sprites():
             if sprite.rect.colliderect(self.hitbox):
@@ -77,13 +84,25 @@ class Enemy(pygame.sprite.Sprite):
 
                     self.direction.y = 0
             
-            # Detect the change in the direction to avoid falling
-            collision_point = [value for value in self.rect.midbottom]
-            collision_point[1] += 16
 
-            if left_right:
-                if sprite.rect.collidepoint(collision_point):
-                    next_tile_empty = False
+        # Detect the change in the direction to avoid falling
+        if left_right:  
+            collision_right = list(self.hitbox.midbottom)
+            collision_right[1] += self.direction.y * self.speed
+            collision_left = [value for value in collision_right]
+            collision_right[0] += 8
+            collision_left[0] -= 8
+            for sprite in collision_group.sprites():
+                if left_right:
+                    if sprite.rect.collidepoint(collision_right):
+                        empty_right = False
+                    if sprite.rect.collidepoint(collision_left):
+                        empty_left = False
+
+            if empty_left and not empty_right:
+                self.direction.x = abs(self.direction.x)
+            elif not empty_left and empty_right:
+                self.direction.x = - abs(self.direction.x)
 
 
         if not left_right:
@@ -91,9 +110,9 @@ class Enemy(pygame.sprite.Sprite):
 
                 if self.is_grounded:
                     self.is_grounded = False
+        
 
-        if next_tile_empty and left_right:
-            self.direction.x *= -1
+        
 
 
     def update_direction(self):
@@ -123,30 +142,34 @@ class Eraser(Enemy):
         super().__init__(*args, **kwargs)
 
         # Define a static surface
-        self.image = pygame.Surface((64, 64))
-        self.image.fill((200, 10, 200))
+        self.image = pygame.image.load(os.path.join("data", "eraser", "idle0000.png")).convert_alpha()
+        rect = self.image.get_rect()
+        self.image = pygame.transform.scale(self.image, (rect.width * SCALE_FACTOR, rect.height * SCALE_FACTOR))
 
         # Load animation
         self.animations = {
-            "walk_right" : [self.image],
-            "walk_left" : [self.image]
+            "idle_right" : [self.image],
+            "idle_left" : [pygame.transform.flip(self.image, True, False)],
+            "walk_right" : [],
+            "walk_left" : []
         }
-        """
-        for i in range(4):
-            surface = pygame.image.load(os.path.join(DATA_DIR, "slug", "slug{:04d}.png".format(i))).convert_alpha()
+        
+        for i in range(7):
+            surface = pygame.image.load(os.path.join(DATA_DIR, "eraser", "walk{:04d}.png".format(i))).convert_alpha()
             rect = surface.get_rect()
             surface = pygame.transform.scale(surface, (rect.width * SCALE_FACTOR, rect.height * SCALE_FACTOR))
             
-            self.animations["walk_left"].append(surface)
-            self.animations["walk_right"].append(pygame.transform.flip(surface, True, False))
-        """
+            self.animations["walk_right"].append(surface)
+            self.animations["walk_left"].append(pygame.transform.flip(surface, True, False))
+        
 
         self.frame_count = 0
         self.animation_speed = 0.1
         self.image = self.animations["walk_right"][0]
         self.rect = self.image.get_rect()
-        self.rect.topleft = (x,y)
-        self.hitbox = self.rect
+        self.rect.bottomleft = (x,y + TILE_SIZE + 100)
+        self.hitbox = self.rect.inflate(-8, -16)
+        self.hitbox.midbottom = self.rect.midbottom
 
         self.direction.x = 1
         self.speed = 2
@@ -157,11 +180,18 @@ class Eraser(Enemy):
     def update(self, collision_group):
         super().update(collision_group)
 
+        suffix = ""
         if self.direction.x > 0 :
-            animation = "walk_right"
+            suffix = "_right"
         elif self.direction.x < 0:
-            animation = "walk_left"
+            suffix = "_left"
+
+        animation = "walk"
+        if self.status == "stun":
+            animation = "idle"
         
+        animation += suffix
+
         # Play the animation
         frame = int(self.frame_count) % len(self.animations[animation])
         self.image = self.animations[animation][frame]

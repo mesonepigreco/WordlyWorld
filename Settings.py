@@ -24,6 +24,7 @@ SCALE_FACTOR = TILE_SIZE // 32
 FONT_LOCATION = os.path.join("data", "prstartk.ttf")#os.path.join(DATA_DIR, "PressStart2P-Regular.ttf")
 FONT_SIZE_TITLE = 40
 FONT_LETTER_B = 50
+FONT_TITLE_B = 68
 FONT_LETTER = 40
 FONT_SIZE_SMALL = 16
 FONT_SIZE_MENU = 22

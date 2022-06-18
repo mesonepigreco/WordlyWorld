@@ -30,6 +30,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    world.update(screen)
+    result = world.update(screen)
+
+    if result == "Quit":
+        running = False
 
     pygame.display.flip()

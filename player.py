@@ -82,7 +82,7 @@ class Player(pygame.sprite.Sprite):
         self.trigger_jump = 0
         self.jump_timeout = 150
         self.slowdown_gravity = 0.2
-        self.trigger_stun = 0
+        self.trigger_stun = -10000
         self.stun_timeout = 500
         self.immortality_timeout = 1200
 
@@ -148,19 +148,33 @@ class Player(pygame.sprite.Sprite):
         total_frames = len(animation)
         self.image = animation[int(self.current_frame) % total_frames]
 
+        ticks = pygame.time.get_ticks()
+
+        if ticks - self.trigger_stun < self.immortality_timeout:
+            transparency = math.sin(2 * math.pi * ticks / 50)
+            transparency += 1
+            transparency /= 2
+            transparency *= 255
+            self.image.set_alpha(int(transparency))
+        else:
+            self.image.set_alpha(255)
+
 
     def update_collectable(self, collectable_group, ui_menu, visible_group):
-        for sprite in collectable_group.sprites():
-            if sprite.rect.colliderect(self.hitbox):
-                if sprite.kind == "letter":
+        ticks = pygame.time.get_ticks()
 
-                    ui_menu.current_word.append(sprite.letter)
-                    ui_menu.original_positions.append((sprite.x, sprite.y))
-                    self.sound_collect.play()
-                    sprite.kill()
+        if ticks - self.trigger_stun > self.immortality_timeout:
+            for sprite in collectable_group.sprites():
+                if sprite.rect.colliderect(self.hitbox):
+                    if sprite.kind == "letter":
 
-                    # Add a small particle bust
-                    particles.sparkles_burst(visible_group, self.rect.center, 25)
+                        ui_menu.current_word.append(sprite.letter)
+                        ui_menu.original_positions.append((sprite.x, sprite.y))
+                        self.sound_collect.play()
+                        sprite.kill()
+
+                        # Add a small particle bust
+                        particles.sparkles_burst(visible_group, self.rect.center, 25)
 
 
     def update(self, collision_group):

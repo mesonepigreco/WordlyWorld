@@ -2,6 +2,7 @@ import re
 import pygame
 import player
 import letter
+import present_word
 import ui
 import random
 import custom_group
@@ -371,6 +372,10 @@ class World:
         #screen.blit(self.loading_surface, (0,0))
         pygame.display.flip()
         self.create_world(level_file)
+
+        # Create the word shower
+        present_word.PresentWord(self.ui.target_word).run()
+        
 
 
 
