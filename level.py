@@ -14,6 +14,35 @@ from Settings import *
 
 class World:
     def __init__(self):
+        self.horizontal_platform_middle = pygame.image.load(os.path.join("data", "ground", "middle_pencil.png")).convert()
+        self.horizontal_platform_middle = pygame.transform.scale(self.horizontal_platform_middle, (TILE_SIZE, TILE_SIZE))
+        self.horizontal_platform_start = pygame.image.load(os.path.join("data", "ground", "start_pencil.png")).convert_alpha()
+        self.horizontal_platform_start = pygame.transform.scale(self.horizontal_platform_start, (TILE_SIZE, TILE_SIZE))
+        self.horizontal_platform_end = pygame.image.load(os.path.join("data", "ground", "back_pencil.png")).convert_alpha()
+        self.horizontal_platform_end = pygame.transform.scale(self.horizontal_platform_end, (TILE_SIZE, TILE_SIZE))
+
+        self.vertical_platform_middle = pygame.image.load(os.path.join("data", "ground", "middle_pencil_vert.png")).convert()
+        self.vertical_platform_middle = pygame.transform.scale(self.vertical_platform_middle, (TILE_SIZE, TILE_SIZE))
+        self.vertical_platform_start = pygame.image.load(os.path.join("data", "ground", "start_pencil_down.png")).convert_alpha()
+        self.vertical_platform_start = pygame.transform.scale(self.vertical_platform_start, (TILE_SIZE, TILE_SIZE))
+        self.vertical_platform_end = pygame.image.load(os.path.join("data", "ground", "back_pencil_top.png")).convert_alpha()
+        self.vertical_platform_end = pygame.transform.scale(self.vertical_platform_end, (TILE_SIZE, TILE_SIZE))
+
+
+        all_platforms = [self.horizontal_platform_middle,
+            self.vertical_platform_middle]
+
+        # Reduce contrast
+        for platform in all_platforms:
+            rect = platform.get_rect()
+            surface = pygame.Surface((rect.width, rect.height))
+            surface.fill((255, 255, 255))
+            surface.set_alpha(70)
+
+            platform.blit(surface, (0,0))
+
+
+
         self.ground_top = pygame.image.load(GROUND_TOP).convert()
         self.ground_topleft = pygame.image.load(GROUND_TOPLEFT).convert_alpha()
         self.ground_left = pygame.image.load(GROUND_LEFT).convert()
@@ -37,9 +66,9 @@ class World:
         self.target_word = None
 
         # Background properties
-        self.background = pygame.Surface((64, 64))
-        self.background.fill((0, 0, 50))
-        #self.background = pygame.image.load(os.path.join(DATA_DIR, "background", "background.png")).convert()
+        #self.background = pygame.Surface((64, 64))
+        #self.background.fill((0, 0, 50))
+        self.background = pygame.image.load(os.path.join(DATA_DIR, "background.png")).convert()
         new_dim = [self.background.get_rect().width * SCALE_FACTOR,
             self.background.get_rect().height * SCALE_FACTOR]
         self.background = pygame.transform.scale(self.background, new_dim)
@@ -51,7 +80,7 @@ class World:
         self.font_title = pygame.font.Font(FONT_LOCATION, FONT_SIZE_TITLE)
 
         # Menu 
-        #self.menu = menu.Menu(["Start game", "Load", "Save", "Quit"])
+        self.menu = menu.Menu(["Start game", "Load", "Save", "Quit"], fixed_message=["Pause"], fixed_color=(10, 10, 10))
         self.final_menu = None
         self.display_final_menu = False
         self.display_menu = False
@@ -149,9 +178,12 @@ class World:
                 win_condition = score > .5 and self.player.timer > 0
 
                 if win_condition:
-                    self.final_menu = menu.Menu(["Next level", "Retry"]) 
+                    self.final_menu = menu.Menu(["Next level", "Retry"], fixed_message=["Contratulations!"], burst=True) 
                 else:
-                    self.final_menu = menu.Menu(["Retry"]) 
+                    message = ["The order of letters", "is important!"]
+                    if self.player.timer <= 0:
+                        message = ["Out of time!"]
+                    self.final_menu = menu.Menu(["Retry"], fixed_message=message, fixed_color=(180, 20, 20)) 
 
             return True
         return False
@@ -184,14 +216,16 @@ class World:
     def check_enemy_collision(self):
         for sprite in self.enemy_group.sprites():
             if self.player.hitbox.colliderect(sprite.hitbox):
-                self.player.push_back(sprite.push_back, sprite.direction.x - self.player.direction.x)
-                if len(self.ui.current_word):
+                good_collision = self.player.push_back(sprite.push_back, sprite.direction.x - self.player.direction.x)
+                if len(self.ui.current_word) and good_collision:
                     char = self.ui.current_word.pop(-1)
                     x, y =  self.ui.original_positions.pop(-1)
-                    letter.Letter(x, y, char, self.font_title, self.visible_group, self.collectable_group)
+                    letter.Letter(x, y, char, self.visible_group, self.collectable_group)
+
+                # Stop the enemy from walking
+                sprite.stun_trigger = pygame.time.get_ticks()
 
     def check_pause(self):
-        return False
         keys = pygame.key.get_pressed()
         ticks = pygame.time.get_ticks()
         if (keys[pygame.K_RETURN]) and ticks - self.menu.check_return > self.menu.return_timeout:
@@ -218,7 +252,7 @@ class World:
         self.check_enemy_collision()
 
         self.player.update_camera(self.camera, screen.get_width(), screen.get_height())
-        self.player.update_collectable(self.collectable_group, self.ui)
+        self.player.update_collectable(self.collectable_group, self.ui, self.visible_group)
         #for sprite in self.visible_group.sprites():
         #    sprite.update_rect(self.camera)
 
@@ -258,7 +292,7 @@ class World:
                     self.pause = False
 
                     # Play again the music
-                    self.music.play(-1)
+                    #self.music.play(-1)
                 elif result == "Save":
                     self.save()
 
@@ -266,13 +300,13 @@ class World:
                     self.pause = False
 
                     # Play again the music
-                    self.music.play(-1)
+                    #self.music.play(-1)
                 elif result == "Load":
                     self.display_menu = False
                     self.pause = False
 
                     # Play again the music
-                    self.music.play(-1)
+                    #self.music.play(-1)
                     self.load()
                 elif result == "Quit":
                     return "Quit"
@@ -329,6 +363,7 @@ class World:
         self.enemy_group.empty()
 
         self.player = None
+        self.ui.current_word = []
 
         level_file = os.path.join(DATA_DIR, "level_{}.txt".format(self.level))
         
@@ -347,6 +382,7 @@ class World:
             has_left = False
             has_right = False
             has_top = False
+            has_bottom = False
 
             for secondtile in self.visible_group:
                 if secondtile.kind != "tile":
@@ -369,28 +405,29 @@ class World:
                 if abs(delta_y  - TILE_SIZE) < EPSILON and abs(delta_x) < EPSILON:
                     has_top = True
 
+                if abs(delta_y  + TILE_SIZE) < EPSILON and abs(delta_x) < EPSILON:
+                    has_bottom = True
+
                 #print("TILE AT: {} AND {}: L:{} R:{} T:{}".format( (tile.x// TILE_SIZE, tile.y//TILE_SIZE),
                 #    (secondtile.x// TILE_SIZE, secondtile.y//TILE_SIZE),
                 #    has_left, has_right, has_top))
 
             
             
-            if has_left and has_right and has_top:
-                tile.image = self.ground_bulk
-            elif has_left and has_top:
-                tile.image = self.ground_right
-            elif has_right and has_top:
-                tile.image = self.ground_left
-            elif has_left and not has_right and not has_top:
-                tile.image = self.ground_topright
-            elif has_right and not has_left and not has_top:
-                tile.image = self.ground_topleft
-            elif has_top and not has_left and not has_right:
-                tile.image = self.ground_leftright
-            elif not has_top and not has_left and not has_right:
-                tile.image = self.ground_topleftright
+            if has_left and has_right and has_top and has_bottom:
+                tile.image = self.vertical_platform_middle
+            elif has_left and has_right and not has_top and not has_bottom:
+                tile.image = self.horizontal_platform_middle
+            elif not has_left and has_right and not has_top and not has_bottom:
+                tile.image = self.horizontal_platform_start 
+            elif has_left and not has_right and not has_top and not has_bottom:
+                tile.image = self.horizontal_platform_end
             elif not has_top:
-                tile.image = self.ground_top
+                tile.image = self.vertical_platform_end
+            elif not has_bottom:
+                tile.image = self.vertical_platform_start    
+            else:
+                tile.image = self.vertical_platform_middle
             
             #else:
             #    tile.image = self.ground_bulk
@@ -408,8 +445,8 @@ class World:
         self.target_word = lines.pop(0).strip()
         self.ui.target_word = self.target_word
 
-        # Total time is 6 seconds per letter
-        total_time = 4 * len(self.target_word)
+        # Total time is 5 seconds per letter
+        total_time = 5 * len(self.target_word)
 
 
         shuffle_letters = list(self.target_word)
@@ -431,7 +468,7 @@ class World:
                     self.player = player.Player(x, y, self.visible_group)
                     self.player.timer = total_time
                 elif character == "W":
-                    letter.Letter(x, y, shuffle_letters.pop(0), self.font_title, self.visible_group, self.collectable_group)
+                    letter.Letter(x, y, shuffle_letters.pop(0), self.visible_group, self.collectable_group)
                 elif character == "E":
                     enemy.Eraser(x, y, self.visible_group, self.enemy_group)
                 elif character == "O":

@@ -19,12 +19,16 @@ DATA_DIR = "data"
 PLAYER_ANIMATION_DATA = os.path.join("data", "miner")
 TILE_SIZE = 64
 
-SCALE_FACTOR = TILE_SIZE // 16
+SCALE_FACTOR = TILE_SIZE // 32
 
-FONT_LOCATION = None#os.path.join(DATA_DIR, "PressStart2P-Regular.ttf")
-FONT_SIZE_TITLE = 80
+FONT_LOCATION = os.path.join("data", "prstartk.ttf")#os.path.join(DATA_DIR, "PressStart2P-Regular.ttf")
+FONT_SIZE_TITLE = 40
+FONT_LETTER_B = 50
+FONT_LETTER = 40
 FONT_SIZE_SMALL = 16
-FONT_SIZE_MENU = 32
+FONT_SIZE_MENU = 22
+FONT_SIZE_MENU_B = 32
+
 
 GRAVITY = 0.3
 MAX_VERTICAL_SPEED = 5

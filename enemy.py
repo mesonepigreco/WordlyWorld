@@ -23,6 +23,9 @@ class Enemy(pygame.sprite.Sprite):
         self.affected_by_gravity = True
         self.is_grounded = False
 
+        self.stun_trigger = 0
+        self.stun_timeout = 700
+
 
     def update_rect(self):
         self.rect.center = self.hitbox.center
@@ -33,18 +36,25 @@ class Enemy(pygame.sprite.Sprite):
     def trigger_horizontal_collision(self):
         pass
 
+
     def update(self, collision_group):
+        ticks = pygame.time.get_ticks()
+
         self.update_direction()
         self.update_image()
-        self.hitbox.x += self.direction.x * self.speed
-        self.detect_collistions(collision_group, left_right= True)
-        self.hitbox.y += self.direction.y * self.speed
-        self.detect_collistions(collision_group, left_right=False)
+
+        if ticks - self.stun_trigger > self.stun_timeout:
+            self.hitbox.x += self.direction.x * self.speed
+            self.detect_collistions(collision_group, left_right= True)
+            self.hitbox.y += self.direction.y * self.speed
+            self.detect_collistions(collision_group, left_right=False)
 
         self.update_rect()
 
     def detect_collistions(self, collision_group, left_right = True):
         is_colliding = False
+
+        next_tile_empty = True
 
         for sprite in collision_group.sprites():
             if sprite.rect.colliderect(self.hitbox):
@@ -66,6 +76,14 @@ class Enemy(pygame.sprite.Sprite):
                         self.hitbox.top = sprite.rect.bottom 
 
                     self.direction.y = 0
+            
+            # Detect the change in the direction to avoid falling
+            collision_point = [value for value in self.rect.midbottom]
+            collision_point[1] += 16
+
+            if left_right:
+                if sprite.rect.collidepoint(collision_point):
+                    next_tile_empty = False
 
 
         if not left_right:
@@ -73,6 +91,9 @@ class Enemy(pygame.sprite.Sprite):
 
                 if self.is_grounded:
                     self.is_grounded = False
+
+        if next_tile_empty and left_right:
+            self.direction.x *= -1
 
 
     def update_direction(self):
@@ -91,6 +112,8 @@ class Enemy(pygame.sprite.Sprite):
             self.direction.y += GRAVITY
             if self.direction.y > MAX_VERTICAL_SPEED:
                 self.direction.y = MAX_VERTICAL_SPEED
+
+        
 
 
 

@@ -3,6 +3,12 @@ import sys, os
 import player
 import level
 
+
+# Force the execution in the directory of the script
+total_path = os.path.dirname(os.path.abspath(__file__))
+os.chdir(total_path)
+
+
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 
