@@ -32,6 +32,7 @@ class World:
 
         all_platforms = [self.horizontal_platform_middle,
             self.vertical_platform_middle]
+        self.winning = False
 
         # Reduce contrast
         for platform in all_platforms:
@@ -81,7 +82,7 @@ class World:
         self.font_title = pygame.font.Font(FONT_LOCATION, FONT_SIZE_TITLE)
 
         # Menu 
-        self.menu = menu.Menu(["Start game", "Load", "Save", "Quit"], fixed_message=["Pause"], fixed_color=(10, 10, 10))
+        self.menu = menu.Menu(["Start Game", "Main Menu"], fixed_message=["Pause"], fixed_color=(10, 10, 10))
         self.final_menu = None
         self.display_final_menu = False
         self.display_menu = False
@@ -210,9 +211,10 @@ class World:
             if not self.pause:
                 score = self.ui.get_score()
                 win_condition = score > .5 and self.player.timer > 0
+                self.winning = win_condition
 
                 if win_condition:
-                    self.final_menu = menu.Menu(["Next level", "Retry"], fixed_message=["Contratulations!"], burst=True)
+                    self.final_menu = menu.Menu(["Next Level", "Retry", "Main Menu"], fixed_message=["Contratulations!"], burst=True)
                     self.win_sound.play()
 
                 else:
@@ -220,7 +222,7 @@ class World:
                     message = ["The order of letters", "is important!"]
                     if self.player.timer <= 0:
                         message = ["Out of time!"]
-                    self.final_menu = menu.Menu(["Retry"], fixed_message=message, fixed_color=(180, 20, 20)) 
+                    self.final_menu = menu.Menu(["Retry", "Main Menu"], fixed_message=message, fixed_color=(180, 20, 20)) 
 
             return True
         return False
@@ -351,6 +353,12 @@ class World:
         else:
             self.is_in_intro = False
 
+    def reset(self):
+        self.ui.current_word = []
+        self.pause = False
+        self.display_final_menu = False
+        self.display_menu = False
+
 
     def update(self, screen):
         # Update all 
@@ -394,14 +402,13 @@ class World:
             result = self.final_menu.update()
             if result is not None:
                 self.pause = False
-                if result == "Retry":
-                    self.ui.current_word = []
-                    self.start_level()
-                elif result == "Next level":
-                    self.level += 1
-                    self.ui.current_word = []
-                    self.start_level()
+
+                return_value =  {"result": self.winning, "word" : [x for x in self.ui.current_word]}
+                self.ui.current_word = []
+
+                return_value["action"] = result
                 self.display_final_menu = False
+                return return_value
             self.final_menu.draw(screen)
 
 
@@ -410,10 +417,10 @@ class World:
         if self.display_menu:
             result = self.menu.update()
             if result is not None:
-                if result == "Start game":
+                if result == "Start Game":
                     self.display_menu = False
                     self.pause = False
-
+                    """
                 elif result == "Save":
                     self.save()
 
@@ -426,8 +433,13 @@ class World:
 
                     # Play again the music
                     self.load()
-                elif result == "Quit":
-                    return "Quit"
+                    """
+
+                elif result == "Main Menu":
+                    self.display_menu = False
+                    self.pause = False
+                    return_value =  {"result": False, "word" : [], "action":"Main Menu"}
+
             self.menu.draw(screen)
 
         # Check death
@@ -473,6 +485,7 @@ class World:
         """
 
     def start_level(self):
+        self.reset()
         # Reset the group
         self.collision_group.empty()
         self.visible_group.empty()
@@ -561,6 +574,8 @@ class World:
     def create_world(self, data_file = DATA_WORLD, offset_tiles = 5):
         maxx = 0
         maxy = 0
+
+        self.winning = False
 
         total_lamps = 0
         with open(data_file, "r") as fp:

@@ -1,5 +1,6 @@
 import pygame
 import sys, os
+from overworld import OverWorld
 import player
 import level
 
@@ -19,9 +20,13 @@ clock = pygame.time.Clock()
 visible_sprites = pygame.sprite.Group()
 collision_sprites = pygame.sprite.Group()
 
-world = level.World()
-world.start_level()
+overworld = OverWorld()
+overworld.init()
+overworld.run()
 
+#world = level.World()
+#world.start_level()
+"""
 running = True
 while running:
     clock.tick(60)
@@ -36,3 +41,4 @@ while running:
         running = False
 
     pygame.display.flip()
+"""
