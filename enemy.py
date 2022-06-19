@@ -29,7 +29,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
     def update_rect(self):
-        self.rect.center = self.hitbox.center
+        self.rect.midbottom = self.hitbox.midbottom
     
     def update_image(self):
         pass
@@ -167,7 +167,7 @@ class Eraser(Enemy):
         self.animation_speed = 0.1
         self.image = self.animations["walk_right"][0]
         self.rect = self.image.get_rect()
-        self.rect.bottomleft = (x,y + TILE_SIZE + 100)
+        self.rect.bottomleft = (x,y + TILE_SIZE)
         self.hitbox = self.rect.inflate(-8, -16)
         self.hitbox.midbottom = self.rect.midbottom
 

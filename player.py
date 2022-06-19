@@ -60,7 +60,7 @@ class Player(pygame.sprite.Sprite):
 
         # Hitbox and rect
         self.rect = self.image.get_rect()
-        self.rect.topleft = (x, y)
+        self.rect.bottomleft = (x, y + TILE_SIZE)
 
         self.hitbox = self.rect.inflate(-20, 0)
 
@@ -90,17 +90,17 @@ class Player(pygame.sprite.Sprite):
         # Sounds
         
         self.sound_jump = pygame.mixer.Sound(os.path.join(DATA_DIR, "audio", "jump.wav"))
-        #self.sound_hit = pygame.mixer.Sound(os.path.join(DATA_DIR, "sounds", "hit.wav"))
+        self.sound_hit = pygame.mixer.Sound(os.path.join(DATA_DIR, "audio", "hit.wav"))
         self.sound_boing = pygame.mixer.Sound(os.path.join(DATA_DIR, "audio", "boing.wav"))
         #self.sound_target = pygame.mixer.Sound(os.path.join(DATA_DIR, "sounds", "target.wav"))
         #self.sound_death = pygame.mixer.Sound(os.path.join(DATA_DIR, "sounds", "death.wav"))
         self.sound_collect = pygame.mixer.Sound(os.path.join(DATA_DIR, "audio", "collect.wav"))
 
         #self.sound_death.set_volume(0.1)
-        self.sound_boing.set_volume(0.3)
-        self.sound_jump.set_volume(0.4)
-        self.sound_collect.set_volume(0.5)
-        #self.sound_hit.set_volume(0.4)
+        self.sound_boing.set_volume(0.2)
+        self.sound_jump.set_volume(0.2)
+        self.sound_collect.set_volume(0.2)
+        self.sound_hit.set_volume(0.7)
         
     
 
@@ -254,7 +254,7 @@ class Player(pygame.sprite.Sprite):
         ticks = pygame.time.get_ticks()
 
         if ticks - self.trigger_stun > self.immortality_timeout:
-            #self.sound_hit.play()
+            self.sound_hit.play()
             self.direction.x = force * math.copysign(1, direction)
             
             self.trigger_stun = ticks

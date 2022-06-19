@@ -107,6 +107,15 @@ class World:
         self.enemy_group = pygame.sprite.Group()
         self.spawners = []
 
+        # Intro camera
+        self.trigger_start = 0
+        self.timer_camera_move = 1000
+        self.timer_camera_stop = 500
+        self.correct_letter_positions = []
+        self.is_in_intro = True
+
+
+
         # General info
         self.pause = False
         self.level = 0
@@ -114,9 +123,21 @@ class World:
         self.ui = ui.UserInterface(self.player, self.font_title)
 
         # Music
-        #self.music = pygame.mixer.Sound(os.path.join(DATA_DIR, "main-theme.wav"))
-        #self.music.set_volume(0.1)
-        #self.music.play(-1)
+        self.clock_sound = pygame.mixer.Sound(os.path.join("data", "audio", "clock.wav"))
+        self.clock_sound.set_volume(0.005)
+        self.clock_playing = False
+
+        self.win_sound = pygame.mixer.Sound(os.path.join("data", "win.wav"))
+        self.win_sound.set_volume(0.7)
+
+        self.defeat_sound = pygame.mixer.Sound(os.path.join("data", "defeat.wav"))
+        self.defeat_sound.set_volume(0.7)
+
+        self.music = pygame.mixer.Sound(os.path.join(DATA_DIR, "superbook.wav"))
+        self.music_volume = 0.1
+        self.music_pause_volume = 0.02
+        self.music.set_volume(self.music_volume)
+        self.music.play(-1)
 
     
     def __setattr__(self, __name, __value):
@@ -172,15 +193,30 @@ class World:
         return False
     """
 
+
+    def paused(self):
+        return self.pause or self.display_final_menu or self.is_in_intro
+
+    def update_music(self):
+        if not self.paused():
+            self.music.set_volume(self.music_volume)
+        else:
+            self.music.set_volume(self.music_pause_volume)
+
+
     def check_win(self):
+
         if len(self.collectable_group) == 0 or self.player.timer <= 0:
             if not self.pause:
                 score = self.ui.get_score()
                 win_condition = score > .5 and self.player.timer > 0
 
                 if win_condition:
-                    self.final_menu = menu.Menu(["Next level", "Retry"], fixed_message=["Contratulations!"], burst=True) 
+                    self.final_menu = menu.Menu(["Next level", "Retry"], fixed_message=["Contratulations!"], burst=True)
+                    self.win_sound.play()
+
                 else:
+                    self.defeat_sound.play()
                     message = ["The order of letters", "is important!"]
                     if self.player.timer <= 0:
                         message = ["Out of time!"]
@@ -192,7 +228,24 @@ class World:
             if sprite.rect.colliderect(self.player.hitbox):
                 return True
         return False
-        
+
+    def update_clock_sound(self):
+        if self.pause or self.display_menu:
+            self.clock_sound.set_volume(0)
+            if self.clock_playing:
+                self.clock_sound.stop()
+                self.clock_playing = False
+        else:
+            if not self.clock_playing:
+                self.clock_sound.play(-1)
+                self.clock_playing = True
+            remaining_time = self.player.timer
+            if remaining_time > 15:
+                volume = 0.0005
+            else:   
+                volume = 1 / (1 + .2 * remaining_time**2)
+            self.clock_sound.set_volume(volume)
+
 
 
     def blit_text_on_center(self, text, surface, below = None, offset = 50):
@@ -231,28 +284,97 @@ class World:
         ticks = pygame.time.get_ticks()
         if (keys[pygame.K_RETURN]) and ticks - self.menu.check_return > self.menu.return_timeout:
             self.menu.check_return = ticks
+
+            if self.pause == False:
+                self.menu.focus = 0
             self.pause = True
             self.display_menu = True
-            pygame.mixer.fadeout(400)
         if not keys[pygame.K_RETURN]:
             self.menu.check_return = 0
+
+
+    def camera_intro(self):
+
+        ticks = pygame.time.get_ticks()
+        keys = pygame.key.get_pressed()
+
+        # Targets of the came
+        targets = [self.player.rect.center]
+        for lpos in self.correct_letter_positions:
+            targets.append(lpos)
+        targets.append(self.player.rect.center)
+
+        total_camera_time = self.timer_camera_move * (len(targets) - 1)
+        total_camera_time += self.timer_camera_stop * len(targets)
+
+        if ticks - self.trigger_start < total_camera_time:
+            self.is_in_intro = True
+
+            camera_time = ticks - self.trigger_start
+
+            start_index = 0
+            end_index = 0
+            current_timer = camera_time
+            #start_time = 0
+            #end_time = 0
+            while camera_time > 0:
+
+                camera_time -=  self.timer_camera_stop
+                if camera_time < 0:
+                    break
+                
+                end_index += 1
+
+                current_timer = camera_time
+                camera_time -= self.timer_camera_move
+                if camera_time > 0:
+                    start_index += 1
+
+            if start_index > 0:
+                if keys[pygame.K_RETURN]:
+                    self.trigger_start -= 100000
+
+            
+            direction = pygame.math.Vector2(targets[end_index][0],targets[end_index][1])
+            direction.x -= targets[start_index][0]
+            direction.y -= targets[start_index][1]
+
+            camera_pos = [x for x in targets[start_index]]
+            ratio_time = current_timer / self.timer_camera_move
+            camera_pos[0] += direction.x * ratio_time
+            camera_pos[1] += direction.y * ratio_time
+
+            screen_rect = pygame.display.get_surface().get_rect()
+            self.camera.x = camera_pos[0] - screen_rect.width / 2
+            self.camera.y = camera_pos[1] - screen_rect.height / 2
+
+        else:
+            self.is_in_intro = False
 
 
     def update(self, screen):
         # Update all 
 
+        self.update_clock_sound()
 
-        if not self.pause and not self.display_menu:
+        self.update_music()
+
+        self.camera_intro()
+
+
+        if not self.pause and not self.display_menu and not self.is_in_intro:
             self.check_pause()
             self.visible_group.update(self.collision_group)
 
             for spawner in self.spawners:
                 spawner.update()
+
+            
+            self.player.update_camera(self.camera, screen.get_width(), screen.get_height())
         
         
         self.check_enemy_collision()
 
-        self.player.update_camera(self.camera, screen.get_width(), screen.get_height())
         self.player.update_collectable(self.collectable_group, self.ui, self.visible_group)
         #for sprite in self.visible_group.sprites():
         #    sprite.update_rect(self.camera)
@@ -292,22 +414,17 @@ class World:
                     self.display_menu = False
                     self.pause = False
 
-                    # Play again the music
-                    #self.music.play(-1)
                 elif result == "Save":
                     self.save()
 
                     self.display_menu = False
                     self.pause = False
 
-                    # Play again the music
-                    #self.music.play(-1)
                 elif result == "Load":
                     self.display_menu = False
                     self.pause = False
 
                     # Play again the music
-                    #self.music.play(-1)
                     self.load()
                 elif result == "Quit":
                     return "Quit"
@@ -375,6 +492,8 @@ class World:
 
         # Create the word shower
         present_word.PresentWord(self.ui.target_word).run()
+
+        self.trigger_start = pygame.time.get_ticks()
         
 
 
@@ -451,11 +570,30 @@ class World:
         self.ui.target_word = self.target_word
 
         # Total time is 5 seconds per letter
-        total_time = 5 * len(self.target_word)
+        total_time = 6 * len(self.target_word)
+        if len(self.target_word) > 6:
+            total_time += 3 * (len(self.target_word) - 6)
 
 
         shuffle_letters = list(self.target_word)
         random.shuffle(shuffle_letters)
+
+        # Get the letter position
+        ordered_indices = []
+        remaining_indices = [i for i in range(len(shuffle_letters))]
+        for good_index, char in enumerate(shuffle_letters):
+            for i in range(len(remaining_indices) - 1, -1, -1):
+                index = remaining_indices[i]
+
+                if char == self.target_word[index]:
+                    ordered_indices.append(index)
+                    remaining_indices.pop(i)
+                    break
+                    
+        self.correct_letter_positions = [None] * len(self.target_word)
+        appended_order = [None] * len(self.target_word)
+        letter_index = 0
+
         
         for yindex, line in enumerate(lines):
             for xindex, character in enumerate(line):
@@ -473,7 +611,11 @@ class World:
                     self.player = player.Player(x, y, self.visible_group)
                     self.player.timer = total_time
                 elif character == "W":
-                    letter.Letter(x, y, shuffle_letters.pop(0), self.visible_group, self.collectable_group)
+                    lchar =  shuffle_letters.pop(0)
+                    letter.Letter(x, y, lchar, self.visible_group, self.collectable_group)
+                    self.correct_letter_positions[ordered_indices[letter_index]] = (x, y)
+                    appended_order[ordered_indices[letter_index]] = lchar
+                    letter_index += 1
                 elif character == "E":
                     enemy.Eraser(x, y, self.visible_group, self.enemy_group)
                 elif character == "O":
