@@ -97,10 +97,10 @@ class Player(pygame.sprite.Sprite):
         self.sound_collect = pygame.mixer.Sound(os.path.join(DATA_DIR, "audio", "collect.wav"))
 
         #self.sound_death.set_volume(0.1)
-        self.sound_boing.set_volume(0.2)
-        self.sound_jump.set_volume(0.2)
-        self.sound_collect.set_volume(0.2)
-        self.sound_hit.set_volume(0.7)
+        self.sound_boing.set_volume(0.3)
+        self.sound_jump.set_volume(0.3)
+        self.sound_collect.set_volume(0.5)
+        self.sound_hit.set_volume(0.8)
         
     
 

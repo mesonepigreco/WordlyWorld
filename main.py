@@ -3,42 +3,48 @@ import sys, os
 from overworld import OverWorld
 import player
 import level
+import splash_screen
 
 
-# Force the execution in the directory of the script
-total_path = os.path.dirname(os.path.abspath(__file__))
-os.chdir(total_path)
+if __name__ == "__main__":
+    # Force the execution in the directory of the script
+    total_path = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(total_path)
 
 
-pygame.init()
-screen = pygame.display.set_mode((800, 600))
+    pygame.init()
+    screen = pygame.display.set_mode((800, 600))
 
 
-clock = pygame.time.Clock()
+    clock = pygame.time.Clock()
 
 
-visible_sprites = pygame.sprite.Group()
-collision_sprites = pygame.sprite.Group()
+    visible_sprites = pygame.sprite.Group()
+    collision_sprites = pygame.sprite.Group()
 
-overworld = OverWorld()
-overworld.init()
-overworld.run()
+    overworld = OverWorld()
+    overworld.init()
 
-#world = level.World()
-#world.start_level()
-"""
-running = True
-while running:
-    clock.tick(60)
+    splash = splash_screen.SplashScreen()
+    splash.run()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    overworld.run()
+
+    #world = level.World()
+    #world.start_level()
+    """
+    running = True
+    while running:
+        clock.tick(60)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        result = world.update(screen)
+
+        if result == "Quit":
             running = False
 
-    result = world.update(screen)
-
-    if result == "Quit":
-        running = False
-
-    pygame.display.flip()
-"""
+        pygame.display.flip()
+    """

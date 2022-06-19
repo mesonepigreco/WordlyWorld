@@ -129,14 +129,14 @@ class World:
         self.clock_playing = False
 
         self.win_sound = pygame.mixer.Sound(os.path.join("data", "win.wav"))
-        self.win_sound.set_volume(0.7)
+        self.win_sound.set_volume(0.8)
 
         self.defeat_sound = pygame.mixer.Sound(os.path.join("data", "defeat.wav"))
-        self.defeat_sound.set_volume(0.7)
+        self.defeat_sound.set_volume(0.8)
 
         self.music = pygame.mixer.Sound(os.path.join(DATA_DIR, "superbook.wav"))
-        self.music_volume = 0.1
-        self.music_pause_volume = 0.02
+        self.music_volume = 0.4
+        self.music_pause_volume = 0.1
         self.music.set_volume(self.music_volume)
         self.music.play(-1)
 
@@ -381,7 +381,7 @@ class World:
             self.player.update_camera(self.camera, screen.get_width(), screen.get_height())
         
         
-        self.check_enemy_collision()
+            self.check_enemy_collision()
 
         self.player.update_collectable(self.collectable_group, self.ui, self.visible_group)
         #for sprite in self.visible_group.sprites():
@@ -439,6 +439,7 @@ class World:
                     self.display_menu = False
                     self.pause = False
                     return_value =  {"result": False, "word" : [], "action":"Main Menu"}
+                    return return_value
 
             self.menu.draw(screen)
 
@@ -587,7 +588,7 @@ class World:
         # Total time is 5 seconds per letter
         total_time = 6 * len(self.target_word)
         if len(self.target_word) > 6:
-            total_time += 3 * (len(self.target_word) - 6)
+            total_time += 5 * (len(self.target_word) - 6)
 
 
         shuffle_letters = list(self.target_word)
