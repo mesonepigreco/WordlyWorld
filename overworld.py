@@ -5,6 +5,7 @@ from Settings import *
 import json
 import ui
 import level
+import credits
 
 class OverWorld:
 
@@ -15,6 +16,7 @@ class OverWorld:
         self.word_font = pygame.font.Font(FONT_LOCATION, FONT_TITLE_B)
 
         self.press_start_sound = pygame.mixer.Sound(os.path.join("data", "audio", "collect.wav"))
+        self.select_sound = pygame.mixer.Sound(os.path.join("data", "audio", "select.wav"))
 
 
         self.background_color = ((255, 255, 255))
@@ -260,7 +262,7 @@ class OverWorld:
                     sys.exit()
             
                 if not in_level:
-                    if event.type == pygame.KEYUP:
+                    if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_RETURN and self.can_press_return():
                             self.press_start_sound.play()
                             self.world.level = self.focus
@@ -268,9 +270,11 @@ class OverWorld:
                             in_level = True
                         elif event.key == pygame.K_UP:
                             if self.focus > 0:
+                                self.select_sound.play()
                                 self.focus -= 1
                         elif event.key == pygame.K_DOWN:
                             if self.focus < len(self.level_surfaces) - 1:
+                                self.select_sound.play()
                                 self.focus += 1
                         
                         print("FOCUS:", self.focus)
@@ -296,15 +300,24 @@ class OverWorld:
                             self.current_progress["guessed_words"][self.world.level] = new_word
                             self.save()
                             self.build_levels()
+
+
+                        # If we won the last level show the credits
+                        if self.world.level == self.n_levels - 1:
+                            cc = credits.Credits()
+                            cc.run()
                     
                     if result["action"] == "Main Menu":
                         in_level = False
                         self.start_timer = pygame.time.get_ticks()
                     elif result["action"] == "Next Level":
-                        self.focus += 1
-                        self.world.level = self.focus
-                        self.world.reset()
-                        self.world.start_level()
+                        if self.focus < self.n_levels - 1:
+                            self.focus += 1
+                            self.world.level = self.focus
+                            self.world.reset()
+                            self.world.start_level()
+                        else:
+                            in_level = False
                     elif result["action"] == "Retry":
                         self.world.reset()
                         self.world.start_level()

@@ -33,8 +33,7 @@ class Confetti(pygame.sprite.Sprite):
             self.kill()
 
 class Sparkle(Confetti):
-    def __init__(self, x, y, velocity, radius = 4):
-        color = (255, 255, 255)
+    def __init__(self, x, y, velocity, radius = 4, color = (255, 255, 255)):
         super().__init__(x, y, velocity)
 
         self.lifetime = 45
@@ -79,7 +78,15 @@ def confetti_burst(visible_sprite, x, y, N, preferred_direction, av_speed = 3, a
 
         visible_sprite.add(conf)
 
-def sparkles_burst(visible_sprites,  pos, N, av_speed = 1.7):
+def sparkles_burst(visible_sprites,  pos, N, av_speed = 1.7, random_colors = False):
+
+    if random_colors:
+        # Random colors
+        colors = [(255, 100, 100), (50, 255, 255), (100, 255, 100),
+            (100, 100, 255), (255, 255, 50), (255, 50, 255)]
+        color = colors[random.randint(0, len(colors)-1)]
+    else:
+        color = (255, 255, 255)
 
     x, y = pos
     for i in range(N):
@@ -87,5 +94,5 @@ def sparkles_burst(visible_sprites,  pos, N, av_speed = 1.7):
         velocity.x += random.uniform(-1., 1.) * av_speed
         velocity.y += random.uniform(-1., 1.) * av_speed
 
-        sparkle = Sparkle(x + random.uniform(-8, 8), y + random.uniform(-8, 8), velocity)
+        sparkle = Sparkle(x + random.uniform(-8, 8), y + random.uniform(-8, 8), velocity, color = color)
         visible_sprites.add(sparkle)

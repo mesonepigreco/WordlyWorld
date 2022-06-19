@@ -4,6 +4,7 @@ from overworld import OverWorld
 import player
 import level
 import splash_screen
+import credits
 
 
 if __name__ == "__main__":
@@ -14,7 +15,6 @@ if __name__ == "__main__":
 
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
-
 
     clock = pygame.time.Clock()
 
